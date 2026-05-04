@@ -1,0 +1,11 @@
+.wrapper {
+  padding: 80px 0;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-white);
+}
+
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 48px 0;
+  }
+}
