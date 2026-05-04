@@ -1,0 +1,136 @@
+/* ─── Global Styles — LUMINA ─── */
+
+:root {
+  --color-bg: #F7F3ED;
+  --color-white: #FFFFFF;
+  --color-graphite: #151515;
+  --color-dark: #0F0F0F;
+  --color-secondary: #6F6A63;
+  --color-gold: #C6A15B;
+  --color-champagne: #E6D6B8;
+  --color-beige: #DDD0BF;
+  --color-border: #E7E0D6;
+  --color-success: #2F7D57;
+  --color-warning: #B9822B;
+  --color-error: #B84A4A;
+  --color-info: #4F6F8F;
+
+  --shadow-card: 0 10px 30px rgba(15, 15, 15, 0.06);
+  --shadow-card-hover: 0 18px 45px rgba(15, 15, 15, 0.10);
+  --shadow-modal: 0 24px 70px rgba(15, 15, 15, 0.18);
+
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  --max-width: 1280px;
+  --header-height: 80px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-graphite);
+  background-color: var(--color-bg);
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--color-graphite);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-gold);
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* ─── Container utility ─── */
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 48px;
+}
+
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+}
+
+/* ─── Section spacing ─── */
+.section {
+  padding: 96px 0;
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 56px 0;
+  }
+}
+
+/* ─── Typography utilities ─── */
+.text-secondary {
+  color: var(--color-secondary);
+}
+
+.text-gold {
+  color: var(--color-gold);
+}
+
+/* ─── Scrollbar styling ─── */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-beige);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-champagne);
+}

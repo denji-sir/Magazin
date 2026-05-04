@@ -22,8 +22,10 @@ dist/
 build/
 .next/
 
-# Project specific ignores (User request)
-README.md
-ai_coding_agent_security_prompt_v2.md
-AGENTS.md
-CONTINUITY.md
+# All markdown docs (project docs, not tracked)
+*.md
+*.md.bak*
+CONTINUITY.md*
+
+# Refs (design reference images)
+refs/
