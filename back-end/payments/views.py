@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cart.models import CartItem
+from catalog.models import Product
 from orders.models import Order, OrderStatus, PaymentStatus
 from users.permissions import IsNotBlocked
 
@@ -59,6 +60,8 @@ class PaymentSimulationAPIView(APIView):
 
         if order.status == OrderStatus.CANCELED:
             return Response({"detail": "Нельзя оплатить отмененный заказ"}, status=status.HTTP_400_BAD_REQUEST)
+        if order.payment_status == PaymentStatus.PAID:
+            return Response({"detail": "Заказ уже оплачен"}, status=status.HTTP_409_CONFLICT)
 
         attempt = PaymentSimulation.objects.create(
             order=order,
@@ -72,14 +75,21 @@ class PaymentSimulationAPIView(APIView):
         outcome = data.get("outcome", "success")
 
         if outcome == "success":
+            product_ids = [i.product_id for i in order.items.all() if i.product_id]
+            locked_products = {p.id: p for p in Product.objects.select_for_update().filter(id__in=product_ids)}
+            for item in order.items.select_related("product"):
+                product = locked_products.get(item.product_id)
+                if product is None or product.stock_quantity < item.quantity:
+                    return Response({"detail": f"Недостаточно товара на складе: {item.product_name}"}, status=status.HTTP_409_CONFLICT)
+
             attempt.status = PaymentStatus.PAID
             order.payment_status = PaymentStatus.PAID
             if order.status in {OrderStatus.CREATED, OrderStatus.PENDING_PAYMENT}:
                 order.status = OrderStatus.PROCESSING
 
             for item in order.items.select_related("product"):
-                product = item.product
-                if product and product.stock_quantity >= item.quantity:
+                product = locked_products.get(item.product_id)
+                if product:
                     product.stock_quantity -= item.quantity
                     product.save(update_fields=["stock_quantity", "updated_at"])
 

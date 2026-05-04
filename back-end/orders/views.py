@@ -5,6 +5,7 @@ from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from rest_framework import mixins, status, viewsets
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -44,11 +45,26 @@ class CheckoutAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        cart_items = list(CartItem.objects.select_related("product").filter(user=request.user))
+        cart_items = list(
+            CartItem.objects.select_related("product")
+            .select_for_update(of=("self",))
+            .filter(user=request.user)
+        )
         if not cart_items:
             return Response({"detail": "Корзина пуста"}, status=status.HTTP_400_BAD_REQUEST)
 
         pickup_point = get_object_or_404(PickupPoint, pk=data["pvzId"], is_active=True)
+
+        product_ids = [i.product_id for i in cart_items]
+        locked_products = {
+            p.id: p
+            for p in Product.objects.select_for_update().filter(id__in=product_ids)
+        }
+
+        for cart_item in cart_items:
+            product = locked_products.get(cart_item.product_id)
+            if product is None or product.stock_quantity < cart_item.quantity:
+                raise ValidationError(f"Недостаточно товара на складе: {cart_item.product.name}")
 
         order = Order.objects.create(
             user=request.user,
@@ -67,12 +83,7 @@ class CheckoutAPIView(APIView):
         order_items = []
 
         for cart_item in cart_items:
-            product = cart_item.product
-            if product.stock_quantity < cart_item.quantity:
-                return Response(
-                    {"detail": f"Недостаточно товара на складе: {product.name}"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            product = locked_products[cart_item.product_id]
 
             line_total = product.price * cart_item.quantity
             total += line_total
