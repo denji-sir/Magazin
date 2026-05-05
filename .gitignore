@@ -29,3 +29,10 @@ CONTINUITY.md*
 
 # Refs (design reference images)
 refs/
+
+# Databases
+*.sqlite3
+
+# Backup files
+*.bak
+*.bak_*

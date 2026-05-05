@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 
 from orders.views import AdminStatsAPIView
 from users.jwt_views import BlockAwareTokenObtainPairView, BlockAwareTokenRefreshView
-from users.views import LoginAPIView, LogoutAPIView, MeAPIView, RefreshAPIView, RegisterAPIView
+from users.views import ChangePasswordAPIView, LoginAPIView, LogoutAPIView, MeAPIView, RefreshAPIView, RegisterAPIView
 
 
 class HealthCheckView(APIView):
@@ -22,6 +22,7 @@ urlpatterns = [
     path("api/auth/login/", LoginAPIView.as_view(), name="auth-login"),
     path("api/auth/register/", RegisterAPIView.as_view(), name="auth-register"),
     path("api/auth/me/", MeAPIView.as_view(), name="auth-me"),
+    path("api/auth/change-password/", ChangePasswordAPIView.as_view(), name="auth-change-password"),
     path("api/auth/refresh/", RefreshAPIView.as_view(), name="auth-refresh"),
     path("api/auth/logout/", LogoutAPIView.as_view(), name="auth-logout"),
     path("api/auth/token/", BlockAwareTokenObtainPairView.as_view(), name="token-obtain"),
