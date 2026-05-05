@@ -3,7 +3,14 @@ from rest_framework.response import Response
 from rest_framework.routers import DefaultRouter
 from rest_framework.views import APIView
 
-from .views import AdminCategoryViewSet, AdminProductViewSet, CategoryPublicViewSet, ProductViewSet
+from .views import (
+    AdminCategoryViewSet,
+    AdminProductViewSet,
+    CategoryPublicViewSet,
+    FavoriteDeleteAPIView,
+    FavoriteListCreateAPIView,
+    ProductViewSet,
+)
 
 
 class CatalogHealthView(APIView):
@@ -24,6 +31,8 @@ admin_router.register("categories", AdminCategoryViewSet, basename="admin-catego
 
 urlpatterns = [
     path("health/", CatalogHealthView.as_view(), name="catalog-health"),
+    path("favorites/", FavoriteListCreateAPIView.as_view(), name="favorites-list-create"),
+    path("favorites/<int:product_id>/", FavoriteDeleteAPIView.as_view(), name="favorites-delete"),
     path("", include(public_router.urls)),
     path("admin/", include(admin_router.urls)),
 ]

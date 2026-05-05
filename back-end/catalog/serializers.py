@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Category, Product, ProductImage
+from .models import Category, Favorite, Product, ProductImage
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -63,4 +63,24 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             "is_new",
             "is_popular",
             "category",
+        ]
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    product_id = serializers.IntegerField(source="product.id", read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    product_price = serializers.DecimalField(source="product.price", read_only=True, max_digits=10, decimal_places=2)
+    product_image = serializers.CharField(source="product.image_url", read_only=True)
+    category = serializers.CharField(source="product.category.slug", read_only=True)
+
+    class Meta:
+        model = Favorite
+        fields = [
+            "id",
+            "product_id",
+            "product_name",
+            "product_price",
+            "product_image",
+            "category",
+            "created_at",
         ]
