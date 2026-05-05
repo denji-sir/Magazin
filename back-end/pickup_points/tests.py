@@ -12,3 +12,6 @@ class PickupPointApiTests(APITestCase):
         resp = self.client.get("/api/pickup-points/active/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertEqual(len(resp.data["results"]), 1)
+        row = resp.data["results"][0]
+        for key in ["id", "name", "city", "address", "schedule", "is_active", "eta_text"]:
+            self.assertIn(key, row)
