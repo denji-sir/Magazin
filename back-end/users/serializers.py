@@ -76,6 +76,17 @@ class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+    currentPassword = serializers.CharField(min_length=6, trim_whitespace=False)
+    newPassword = serializers.CharField(min_length=6, trim_whitespace=False)
+    confirmPassword = serializers.CharField(min_length=6, trim_whitespace=False)
+
+    def validate(self, attrs):
+        if attrs["newPassword"] != attrs["confirmPassword"]:
+            raise serializers.ValidationError({"confirmPassword": "Пароли не совпадают"})
+        return attrs
+
+
 class AdminUserSerializer(serializers.ModelSerializer):
     firstName = serializers.CharField(source="first_name", allow_blank=True, required=False)
     lastName = serializers.CharField(source="last_name", allow_blank=True, required=False)

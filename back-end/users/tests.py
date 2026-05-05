@@ -32,6 +32,8 @@ class AuthApiTests(APITestCase):
         me_resp = self.client.get("/api/auth/me/")
         self.assertEqual(me_resp.status_code, status.HTTP_200_OK)
         self.assertEqual(me_resp.data["email"], register_payload["email"])
+        for key in ["id", "firstName", "lastName", "email", "phone", "role", "isBlocked"]:
+            self.assertIn(key, me_resp.data)
 
     def test_blocked_user_cannot_login(self):
         user = User.objects.create_user(email="blocked@example.com", password="123456", is_blocked=True)
@@ -70,6 +72,64 @@ class AuthApiTests(APITestCase):
             format="json",
         )
         self.assertIn(resp.status_code, {status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN})
+
+    def test_change_password_success_and_login_with_new_password(self):
+        user = User.objects.create_user(email="pw@example.com", password="oldpass123")
+        self.client.force_authenticate(user=user)
+
+        change_resp = self.client.post(
+            "/api/auth/change-password/",
+            {
+                "currentPassword": "oldpass123",
+                "newPassword": "newpass123",
+                "confirmPassword": "newpass123",
+            },
+            format="json",
+        )
+        self.assertEqual(change_resp.status_code, status.HTTP_200_OK)
+
+        self.client.force_authenticate(user=None)
+        old_login = self.client.post(
+            "/api/auth/login/",
+            {"email": "pw@example.com", "password": "oldpass123"},
+            format="json",
+        )
+        self.assertEqual(old_login.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        new_login = self.client.post(
+            "/api/auth/login/",
+            {"email": "pw@example.com", "password": "newpass123"},
+            format="json",
+        )
+        self.assertEqual(new_login.status_code, status.HTTP_200_OK)
+
+    def test_change_password_wrong_current_password(self):
+        user = User.objects.create_user(email="wrong@example.com", password="rightpass123")
+        self.client.force_authenticate(user=user)
+        resp = self.client.post(
+            "/api/auth/change-password/",
+            {
+                "currentPassword": "wrongpass",
+                "newPassword": "newpass123",
+                "confirmPassword": "newpass123",
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_blocked_user_cannot_change_password(self):
+        user = User.objects.create_user(email="blockedpw@example.com", password="pass1234", is_blocked=True)
+        self.client.force_authenticate(user=user)
+        resp = self.client.post(
+            "/api/auth/change-password/",
+            {
+                "currentPassword": "pass1234",
+                "newPassword": "newpass123",
+                "confirmPassword": "newpass123",
+            },
+            format="json",
+        )
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class AdminRBACTests(APITestCase):

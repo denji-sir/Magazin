@@ -5,11 +5,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .permissions import IsAdminRole, IsNotBlocked
 from .serializers import (
     AdminUserSerializer,
+    ChangePasswordSerializer,
     LoginSerializer,
     LogoutSerializer,
     ProfileUpdateSerializer,
@@ -91,6 +93,32 @@ class MeAPIView(APIView):
         return Response(UserPublicSerializer(request.user).data)
 
 
+class ChangePasswordAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsNotBlocked]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        current_password = serializer.validated_data["currentPassword"]
+        new_password = serializer.validated_data["newPassword"]
+
+        if not request.user.check_password(current_password):
+            return Response(
+                {"currentPassword": ["Текущий пароль указан неверно"]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        request.user.set_password(new_password)
+        request.user.save(update_fields=["password"])
+
+        # Revoke all active refresh tokens after password change.
+        for token in OutstandingToken.objects.filter(user=request.user):
+            BlacklistedToken.objects.get_or_create(token=token)
+
+        return Response({"detail": "Пароль успешно изменен"}, status=status.HTTP_200_OK)
+
+
 class RefreshAPIView(APIView):
     permission_classes = [AllowAny]
 
@@ -126,3 +154,10 @@ class AdminUserViewSet(
     queryset = User.objects.all().order_by("-date_joined")
     serializer_class = AdminUserSerializer
     permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        query = self.request.query_params.get("search")
+        if query:
+            queryset = queryset.filter(email__icontains=query)
+        return queryset
