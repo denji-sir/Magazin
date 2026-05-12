@@ -24,8 +24,11 @@ build/
 
 # All markdown docs (project docs, not tracked)
 *.md
+!README.md
 *.md.bak*
 CONTINUITY.md*
+.playwright-mcp/
+front-end/test-results/
 
 # Refs (design reference images)
 refs/
