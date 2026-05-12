@@ -1,6 +1,6 @@
 import { Box, Container, Grid, Stack, Text, Group, ActionIcon, Divider } from '@mantine/core';
 import { Link } from 'react-router-dom';
-import { Instagram, Facebook, Youtube } from 'lucide-react';
+import { Camera, Globe, Play } from 'lucide-react';
 import styles from './Footer.module.css';
 
 const FOOTER_LINKS = [
@@ -8,26 +8,18 @@ const FOOTER_LINKS = [
     title: 'Покупателям',
     links: [
       { label: 'Каталог', path: '/catalog' },
+      { label: 'Личный кабинет', path: '/profile' },
       { label: 'Доставка и оплата', path: '/delivery' },
-      { label: 'Возврат', path: '/returns' },
-      { label: 'Вопросы и ответы', path: '/faq' },
-    ],
-  },
-  {
-    title: 'О бренде',
-    links: [
-      { label: 'Наша история', path: '/about' },
-      { label: 'Мастерская', path: '/workshop' },
       { label: 'Контакты', path: '/contacts' },
-      { label: 'Адреса магазинов', path: '/stores' },
+      { label: 'Оформление заказа', path: '/checkout' },
     ],
   },
   {
-    title: 'Юридическая информация',
+    title: 'Сервис',
     links: [
-      { label: 'Публичная оферта', path: '/terms' },
-      { label: 'Политика конфиденциальности', path: '/privacy' },
-      { label: 'Использование куки', path: '/cookies' },
+      { label: 'Панель администратора', path: '/admin' },
+      { label: 'Вход', path: '/auth/login' },
+      { label: 'Регистрация', path: '/auth/register' },
     ],
   },
 ];
@@ -48,32 +40,24 @@ export function Footer() {
                 </Text>
               </Box>
               <Text fz="sm" c="dimmed" maw={300}>
-                Украшения ручной работы из серебра 925 пробы и натуральных камней, созданные с любовью и вниманием к деталям.
+                Украшения ручной работы из серебра 925 пробы и натуральных камней.
               </Text>
               <Group gap="xs">
-                <ActionIcon variant="subtle" color="dark" size="lg" radius="xl">
-                  <Instagram size={18} />
-                </ActionIcon>
-                <ActionIcon variant="subtle" color="dark" size="lg" radius="xl">
-                  <Facebook size={18} />
-                </ActionIcon>
-                <ActionIcon variant="subtle" color="dark" size="lg" radius="xl">
-                  <Youtube size={18} />
-                </ActionIcon>
+                <ActionIcon variant="subtle" color="dark" size="lg" radius="xl"><Camera size={18} /></ActionIcon>
+                <ActionIcon variant="subtle" color="dark" size="lg" radius="xl"><Globe size={18} /></ActionIcon>
+                <ActionIcon variant="subtle" color="dark" size="lg" radius="xl"><Play size={18} /></ActionIcon>
               </Group>
             </Stack>
           </Grid.Col>
 
           {FOOTER_LINKS.map((section) => (
-            <Grid.Col key={section.title} span={{ base: 6, sm: 4, md: 2.6 }}>
+            <Grid.Col key={section.title} span={{ base: 6, sm: 4, md: 3 }}>
               <Text fw={500} fz="sm" mb="lg" style={{ textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                 {section.title}
               </Text>
               <Stack gap="xs">
                 {section.links.map((link) => (
-                  <Link key={link.label} to={link.path} className={styles.link}>
-                    {link.label}
-                  </Link>
+                  <Link key={link.label} to={link.path} className={styles.link}>{link.label}</Link>
                 ))}
               </Stack>
             </Grid.Col>
@@ -83,12 +67,8 @@ export function Footer() {
         <Divider my={40} color="var(--color-border)" opacity={0.5} />
 
         <Group justify="space-between" align="center">
-          <Text fz="xs" c="dimmed">
-            © {new Date().getFullYear()} LUMINA JEWELRY. Все права защищены.
-          </Text>
-          <Group gap="xs">
-             <Text fz="xs" c="dimmed">Разработано с душой</Text>
-          </Group>
+          <Text fz="xs" c="dimmed">© {new Date().getFullYear()} LUMINA JEWELRY. Все права защищены.</Text>
+          <Text fz="xs" c="dimmed">Клиент-серверная версия</Text>
         </Group>
       </Container>
     </Box>

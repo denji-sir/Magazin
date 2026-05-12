@@ -1,4 +1,7 @@
 .card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   border: 1px solid transparent;
   background: var(--color-white);
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
@@ -10,11 +13,15 @@
 }
 
 .imageSection {
+  height: 320px;
   overflow: hidden;
   background-color: var(--color-bg);
 }
 
 .image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   transition: transform 0.5s ease;
 }
 
@@ -45,6 +52,8 @@
 }
 
 .titleLink {
+  display: block;
+  min-height: 24px;
   text-decoration: none;
   color: inherit;
 }

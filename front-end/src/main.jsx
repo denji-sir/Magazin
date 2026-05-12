@@ -9,26 +9,29 @@ import { theme } from './app/theme';
 import { router } from './app/router';
 import { AuthProvider } from './shared/api/AuthContext';
 import { CartProvider } from './shared/api/CartContext';
+import { FavoritesProvider } from './shared/api/FavoritesContext';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="light">
       <AuthProvider>
-        <CartProvider>
-          <RouterProvider router={router} />
-          <Toaster 
-            position="top-right"
-            toastOptions={{
-              style: {
-                background: '#FFFFFF',
-                color: '#151515',
-                borderRadius: '10px',
-                border: '1px solid #E7E0D6',
-                fontFamily: 'Inter, sans-serif',
-              },
-            }}
-          />
-        </CartProvider>
+        <FavoritesProvider>
+          <CartProvider>
+            <RouterProvider router={router} />
+            <Toaster 
+              position="top-right"
+              toastOptions={{
+                style: {
+                  background: '#FFFFFF',
+                  color: '#151515',
+                  borderRadius: '10px',
+                  border: '1px solid #E7E0D6',
+                  fontFamily: 'Inter, sans-serif',
+                },
+              }}
+            />
+          </CartProvider>
+        </FavoritesProvider>
       </AuthProvider>
     </MantineProvider>
   </StrictMode>

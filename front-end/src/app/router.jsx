@@ -7,7 +7,11 @@ import { CartPage } from '../pages/CartPage';
 import { CheckoutPage } from '../pages/CheckoutPage';
 import { PaymentPage } from '../pages/PaymentPage';
 import { ProfilePage } from '../pages/ProfilePage';
+import { AboutPage } from '../pages/AboutPage';
+import { DeliveryPage } from '../pages/DeliveryPage';
+import { ContactsPage } from '../pages/ContactsPage';
 import { AdminPage } from '../pages/AdminPage';
+import { FavoritesPage } from '../pages/FavoritesPage';
 import { LoginPage } from '../pages/Auth/LoginPage';
 import { RegisterPage } from '../pages/Auth/RegisterPage';
 import { ProtectedRoute } from '../shared/ui/ProtectedRoute';
@@ -18,8 +22,12 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'about', element: <AboutPage /> },
+      { path: 'delivery', element: <DeliveryPage /> },
+      { path: 'contacts', element: <ContactsPage /> },
       { path: 'catalog', element: <CatalogPage /> },
       { path: 'catalog/:id', element: <ProductPage /> },
+      { path: 'favorites', element: <FavoritesPage /> },
       { path: 'cart', element: <CartPage /> },
       { path: 'checkout', element: <CheckoutPage /> },
       { path: 'payment', element: <PaymentPage /> },

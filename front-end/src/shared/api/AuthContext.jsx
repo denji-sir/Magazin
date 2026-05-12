@@ -66,6 +66,11 @@ export function AuthProvider({ children }) {
     return response.data;
   };
 
+  const changePassword = async (payload) => {
+    const response = await api.post('/auth/change-password/', payload);
+    return response.data;
+  };
+
   const value = {
     user,
     loading,
@@ -74,6 +79,7 @@ export function AuthProvider({ children }) {
     login,
     logout,
     updateProfile,
+    changePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

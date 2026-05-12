@@ -1,37 +1,69 @@
-import { 
-  Container, 
-  Grid, 
-  Stack, 
-  Title, 
-  Text, 
-  Box, 
-  Tabs, 
-  Paper, 
-  Avatar, 
-  Group, 
-  Button, 
-  TextInput, 
+import {
+  Container,
+  Grid,
+  Stack,
+  Title,
+  Text,
+  Box,
+  Tabs,
+  Paper,
+  Avatar,
+  Group,
+  Button,
+  TextInput,
   Badge,
   Table,
   ActionIcon,
-  Divider
+  Divider,
+  Modal,
+  SimpleGrid,
+  PasswordInput,
+  Center,
+  Loader,
 } from '@mantine/core';
 import { User, Package, Settings, LogOut, ExternalLink, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../shared/api/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-
-// MOCK ORDERS
-const MOCK_ORDERS = [
-  { id: '10254', date: '12.04.2026', total: 6490, status: 'Оплачен', items: 1 },
-  { id: '10212', date: '05.03.2026', total: 12990, status: 'Получен', items: 2 },
-];
+import { useDisclosure } from '@mantine/hooks';
+import { useEffect, useState } from 'react';
+import { api } from '../shared/api/api';
 
 export function ProfilePage() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, updateProfile, changePassword } = useAuth();
   const navigate = useNavigate();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderModalOpened, { open: openOrderModal, close: closeOrderModal }] = useDisclosure(false);
+  const [saving, setSaving] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+
+  const [firstName, setFirstName] = useState(user?.firstName || '');
+  const [lastName, setLastName] = useState(user?.lastName || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  useEffect(() => {
+    setFirstName(user?.firstName || '');
+    setLastName(user?.lastName || '');
+    setPhone(user?.phone || '');
+  }, [user]);
+
+  useEffect(() => {
+    const loadOrders = async () => {
+      setLoading(true);
+      try {
+        const resp = await api.get('/orders/my/');
+        setOrders(resp.data.results || resp.data || []);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadOrders();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -39,75 +71,73 @@ export function ProfilePage() {
     navigate('/');
   };
 
-  const handleViewOrder = (order) => {
-    setSelectedOrder(order);
+  const handleViewOrder = async (order) => {
+    const resp = await api.get(`/orders/my/${order.id}/`);
+    setSelectedOrder(resp.data);
     openOrderModal();
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      await updateProfile({ firstName, lastName, phone });
+      toast.success('Профиль обновлён');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const savePassword = async () => {
+    if (newPassword.length < 6) {
+      toast.error('Новый пароль должен содержать минимум 6 символов');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Подтверждение пароля не совпадает');
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      await changePassword({
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      toast.success('Пароль успешно изменён');
+    } finally {
+      setPasswordSaving(false);
+    }
   };
 
   return (
     <Box py={60} bg="var(--color-bg)" style={{ minHeight: 'calc(100vh - var(--header-height))' }}>
       <Container size="xl">
         <Grid gutter={40}>
-          {/* ... Sidebar remains the same ... */}
           <Grid.Col span={{ base: 12, md: 4 }}>
             <Paper p="xl" radius="xl" withBorder shadow="sm">
               <Stack align="center" gap="md">
-                <Avatar size={100} radius={100} color="gold" src={null}>
-                  {user?.firstName?.charAt(0) || 'U'}
-                </Avatar>
+                <Avatar size={100} radius={100} color="gold">{user?.firstName?.charAt(0) || 'U'}</Avatar>
                 <Stack gap={4} align="center">
                   <Group gap="xs">
                     <Title order={3}>{user?.firstName || 'Пользователь'} {user?.lastName || ''}</Title>
                     {isAdmin && <ShieldCheck size={20} color="var(--color-gold)" />}
                   </Group>
                   <Text c="dimmed" fz="sm">{user?.email || 'user@example.com'}</Text>
-                  {isAdmin && (
-                    <Badge variant="light" color="gold" mt="xs">Администратор</Badge>
-                  )}
+                  {isAdmin && <Badge variant="light" color="gold" mt="xs">Администратор</Badge>}
                 </Stack>
-                
+
                 <Divider w="100%" my="md" color="var(--color-border)" opacity={0.5} />
-                
+
                 <Stack w="100%" gap="xs">
-                  <Button 
-                    variant="subtle" 
-                    color="dark" 
-                    justify="flex-start" 
-                    leftSection={<Package size={18} />}
-                    fullWidth
-                  >
-                    Мои заказы
-                  </Button>
-                  <Button 
-                    variant="subtle" 
-                    color="dark" 
-                    justify="flex-start" 
-                    leftSection={<User size={18} />}
-                    fullWidth
-                  >
-                    Данные профиля
-                  </Button>
                   {isAdmin && (
-                    <Button 
-                      variant="subtle" 
-                      color="gold" 
-                      justify="flex-start" 
-                      leftSection={<ShieldCheck size={18} />}
-                      fullWidth
-                      onClick={() => navigate('/admin')}
-                    >
+                    <Button variant="subtle" color="gold" justify="flex-start" leftSection={<ShieldCheck size={18} />} fullWidth onClick={() => navigate('/admin')}>
                       Панель управления
                     </Button>
                   )}
-                  <Button 
-                    variant="subtle" 
-                    color="red" 
-                    justify="flex-start" 
-                    leftSection={<LogOut size={18} />}
-                    fullWidth
-                    mt="xl"
-                    onClick={handleLogout}
-                  >
+                  <Button variant="subtle" color="red" justify="flex-start" leftSection={<LogOut size={18} />} fullWidth mt="xl" onClick={handleLogout}>
                     Выйти
                   </Button>
                 </Stack>
@@ -115,7 +145,6 @@ export function ProfilePage() {
             </Paper>
           </Grid.Col>
 
-          {/* Main Content */}
           <Grid.Col span={{ base: 12, md: 8 }}>
             <Tabs defaultValue="orders" color="gold" variant="pills" radius="xl">
               <Tabs.List mb="xl">
@@ -126,7 +155,9 @@ export function ProfilePage() {
               <Tabs.Panel value="orders">
                 <Stack gap="md">
                   <Title order={4} mb="sm">История заказов</Title>
-                  {MOCK_ORDERS.length > 0 ? (
+                  {loading ? (
+                    <Center py={40}><Loader color="gold" /></Center>
+                  ) : orders.length > 0 ? (
                     <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
                       <Table verticalSpacing="md" horizontalSpacing="xl">
                         <Table.Thead bg="var(--color-bg)">
@@ -139,35 +170,18 @@ export function ProfilePage() {
                           </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>
-                          {MOCK_ORDERS.map((order) => (
+                          {orders.map((order) => (
                             <Table.Tr key={order.id}>
+                              <Table.Td><Text fw={500}>#{order.number || order.id}</Text></Table.Td>
+                              <Table.Td><Text fz="sm" c="dimmed">{new Date(order.created_at).toLocaleDateString('ru-RU')}</Text></Table.Td>
+                              <Table.Td><Text fz="sm" fw={600}>{Number(order.total).toLocaleString()} ₽</Text></Table.Td>
                               <Table.Td>
-                                <Text fw={500}>#{order.id}</Text>
+                                <Badge color={order.status === 'received' ? 'green' : 'gold'} variant="light" size="sm">
+                                  {order.status}
+                                </Badge>
                               </Table.Td>
                               <Table.Td>
-                                <Text fz="sm" c="dimmed">{order.date}</Text>
-                              </Table.Td>
-                              <Table.Td>
-                                <Text fz="sm" fw={600}>{order.total.toLocaleString()} ₽</Text>
-                              </Table.Td>
-                              <Table.Td>
-                                <Stack gap={2}>
-                                  <Badge 
-                                    color={order.status === 'Получен' ? 'green' : 'gold'} 
-                                    variant="light"
-                                    size="sm"
-                                  >
-                                    {order.status}
-                                  </Badge>
-                                  {order.status === 'Оплачен' && (
-                                    <Text fz={9} c="dimmed">Код: 42-12</Text>
-                                  )}
-                                </Stack>
-                              </Table.Td>
-                              <Table.Td>
-                                <ActionIcon variant="subtle" color="dark" onClick={() => handleViewOrder(order)}>
-                                  <ExternalLink size={16} />
-                                </ActionIcon>
+                                <ActionIcon variant="subtle" color="dark" onClick={() => handleViewOrder(order)}><ExternalLink size={16} /></ActionIcon>
                               </Table.Td>
                             </Table.Tr>
                           ))}
@@ -176,12 +190,7 @@ export function ProfilePage() {
                     </Paper>
                   ) : (
                     <Paper p="xl" radius="lg" withBorder>
-                      <Center py={40}>
-                        <Stack align="center" gap="sm">
-                          <Text c="dimmed">У вас пока нет заказов</Text>
-                          <Button variant="outline" color="dark" size="xs">Перейти к покупкам</Button>
-                        </Stack>
-                      </Center>
+                      <Center py={40}><Text c="dimmed">У вас пока нет заказов</Text></Center>
                     </Paper>
                   )}
                 </Stack>
@@ -193,26 +202,42 @@ export function ProfilePage() {
                     <Box>
                       <Title order={4} mb="lg">Личные данные</Title>
                       <SimpleGrid cols={2} spacing="md">
-                        <TextInput label="Имя" defaultValue={user?.firstName || 'Иван'} />
-                        <TextInput label="Фамилия" defaultValue={user?.lastName || 'Иванов'} />
-                        <TextInput label="Email" defaultValue={user?.email || 'user@example.com'} disabled />
-                        <TextInput label="Телефон" defaultValue={user?.phone || '+7 (999) 000-00-00'} />
+                        <TextInput label="Имя" value={firstName} onChange={(e) => setFirstName(e.currentTarget.value)} />
+                        <TextInput label="Фамилия" value={lastName} onChange={(e) => setLastName(e.currentTarget.value)} />
+                        <TextInput label="Email" value={user?.email || ''} disabled />
+                        <TextInput label="Телефон" value={phone} onChange={(e) => setPhone(e.currentTarget.value)} />
                       </SimpleGrid>
                     </Box>
 
                     <Divider color="var(--color-border)" opacity={0.5} />
-
                     <Box>
                       <Title order={4} mb="lg">Смена пароля</Title>
                       <Stack gap="md" maw={400}>
-                        <PasswordInput label="Текущий пароль" />
-                        <PasswordInput label="Новый пароль" />
-                        <PasswordInput label="Подтверждение нового пароля" />
+                        <PasswordInput
+                          label="Текущий пароль"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.currentTarget.value)}
+                        />
+                        <PasswordInput
+                          label="Новый пароль"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.currentTarget.value)}
+                        />
+                        <PasswordInput
+                          label="Подтверждение нового пароля"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.currentTarget.value)}
+                        />
+                        <Group justify="flex-end">
+                          <Button variant="light" color="dark" loading={passwordSaving} onClick={savePassword}>
+                            Обновить пароль
+                          </Button>
+                        </Group>
                       </Stack>
                     </Box>
 
                     <Group justify="flex-end" mt="xl">
-                      <Button color="dark">Сохранить изменения</Button>
+                      <Button color="dark" loading={saving} onClick={saveProfile}>Сохранить изменения</Button>
                     </Group>
                   </Stack>
                 </Paper>
@@ -222,61 +247,38 @@ export function ProfilePage() {
         </Grid>
       </Container>
 
-      {/* Order Details Modal */}
-      <Modal 
-        opened={orderModalOpened} 
-        onClose={closeOrderModal} 
-        title={`Детали заказа #${selectedOrder?.id}`}
-        radius="lg"
-        size="lg"
-      >
+      <Modal opened={orderModalOpened} onClose={closeOrderModal} title={`Детали заказа #${selectedOrder?.number || selectedOrder?.id}`} radius="lg" size="lg">
         <Stack gap="md">
           <Group justify="space-between">
             <Box>
               <Text fz="xs" c="dimmed">Дата заказа</Text>
-              <Text fw={500}>{selectedOrder?.date}</Text>
+              <Text fw={500}>{selectedOrder?.created_at ? new Date(selectedOrder.created_at).toLocaleString('ru-RU') : '—'}</Text>
             </Box>
             <Box ta="right">
               <Text fz="xs" c="dimmed">Статус</Text>
-              <Badge color={selectedOrder?.status === 'Получен' ? 'green' : 'gold'} variant="light">
-                {selectedOrder?.status}
-              </Badge>
+              <Badge color={selectedOrder?.status === 'received' ? 'green' : 'gold'} variant="light">{selectedOrder?.status || '—'}</Badge>
             </Box>
           </Group>
 
           <Divider color="var(--color-border)" opacity={0.5} />
-
           <Text fw={600} fz="sm">Товары в заказе</Text>
           <Stack gap="xs">
-            {/* Mocking items in order */}
-            <Group justify="space-between" p="sm" bg="var(--color-bg)" style={{ borderRadius: 'var(--radius-md)' }}>
-              <Group gap="md">
-                <Image src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=100&auto=format&fit=crop" width={40} height={40} radius="sm" />
+            {(selectedOrder?.items || []).map((item) => (
+              <Group key={item.id} justify="space-between" p="sm" bg="var(--color-bg)" style={{ borderRadius: 'var(--radius-md)' }}>
                 <Box>
-                  <Text fz="sm" fw={500}>Кольцо «Luna»</Text>
-                  <Text fz="xs" c="dimmed">1 шт.</Text>
+                  <Text fz="sm" fw={500}>{item.product_name}</Text>
+                  <Text fz="xs" c="dimmed">{item.quantity} шт.</Text>
                 </Box>
+                <Text fz="sm" fw={600}>{Number(item.line_total).toLocaleString()} ₽</Text>
               </Group>
-              <Text fz="sm" fw={600}>{selectedOrder?.total.toLocaleString()} ₽</Text>
-            </Group>
+            ))}
           </Stack>
 
           <Divider color="var(--color-border)" opacity={0.5} />
-
-          <Group justify="space-between">
-            <Text fw={700}>Итого</Text>
-            <Text fw={700} c="gold" fz="lg">{selectedOrder?.total.toLocaleString()} ₽</Text>
-          </Group>
-
-          <Button fullWidth mt="md" variant="light" color="dark" onClick={closeOrderModal}>
-            Закрыть
-          </Button>
+          <Group justify="space-between"><Text fw={700}>Итого</Text><Text fw={700} c="gold" fz="lg">{selectedOrder?.total ? Number(selectedOrder.total).toLocaleString() : 0} ₽</Text></Group>
+          <Button fullWidth mt="md" variant="light" color="dark" onClick={closeOrderModal}>Закрыть</Button>
         </Stack>
       </Modal>
     </Box>
   );
 }
-
-import { Modal } from '@mantine/core';
-
-import { SimpleGrid, PasswordInput, Center } from '@mantine/core';

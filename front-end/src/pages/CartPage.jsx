@@ -19,6 +19,17 @@ import { useCart } from '../shared/api/CartContext';
 
 export function CartPage() {
   const { items, totalPrice, updateQuantity, removeItem, itemCount } = useCart();
+  const handleQuantityChange = async (itemId, val) => {
+    try {
+      await updateQuantity(itemId, Number(val) || 1);
+    } catch {}
+  };
+
+  const handleRemove = async (itemId) => {
+    try {
+      await removeItem(itemId);
+    } catch {}
+  };
 
   if (items.length === 0) {
     return (
@@ -63,7 +74,7 @@ export function CartPage() {
                   <Paper key={item.id} p="md" radius="lg" withBorder>
                     <Grid align="center">
                       <Grid.Col span={{ base: 4, sm: 2 }}>
-                        <Link to={`/catalog/${item.id}`}>
+                        <Link to={`/catalog/${item.productId || item.id}`}>
                           <Image 
                             src={item.image} 
                             radius="md" 
@@ -75,7 +86,7 @@ export function CartPage() {
                       
                       <Grid.Col span={{ base: 8, sm: 4 }}>
                         <Stack gap={4}>
-                          <Link to={`/catalog/${item.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                          <Link to={`/catalog/${item.productId || item.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                             <Text fw={500} fz="sm">{item.name}</Text>
                           </Link>
                           <Text fz="xs" c="dimmed">{item.category}</Text>
@@ -86,7 +97,7 @@ export function CartPage() {
                         <Group gap="xs">
                           <NumberInput
                             value={item.quantity}
-                            onChange={(val) => updateQuantity(item.id, val)}
+                            onChange={(val) => handleQuantityChange(item.id, val)}
                             min={1}
                             max={99}
                             size="sm"
@@ -95,7 +106,7 @@ export function CartPage() {
                           <ActionIcon 
                             variant="subtle" 
                             color="red" 
-                            onClick={() => removeItem(item.id)}
+                            onClick={() => handleRemove(item.id)}
                           >
                             <Trash2 size={16} />
                           </ActionIcon>

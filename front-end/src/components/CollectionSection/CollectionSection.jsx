@@ -1,4 +1,4 @@
-import { Container, Title, SimpleGrid, Card, Image, Text, Box, ActionIcon } from '@mantine/core';
+import { Container, Title, SimpleGrid, Card, Image, Text, Box, Group, Stack } from '@mantine/core';
 import { ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import styles from './CollectionSection.module.css';
@@ -71,4 +71,3 @@ export function CollectionSection() {
     </Box>
   );
 }
-import { Stack } from '@mantine/core';

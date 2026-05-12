@@ -1,6 +1,7 @@
-import { Group, Text, ActionIcon, Badge, Box, Burger, Drawer, Stack } from '@mantine/core';
+import { useState } from 'react';
+import { Group, Text, ActionIcon, Badge, Box, Burger, Drawer, Stack, Modal, TextInput, Button } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Heart, User, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { useCart } from '../../shared/api/CartContext';
 import { useAuth } from '../../shared/api/AuthContext';
@@ -16,9 +17,19 @@ const NAV_LINKS = [
 
 export function Header() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
+  const [searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
+  const [searchValue, setSearchValue] = useState('');
   const { itemCount } = useCart();
   const { isAuthenticated, isAdmin } = useAuth();
+
+  const submitSearch = () => {
+    const value = searchValue.trim();
+    closeSearch();
+    navigate(value ? `/catalog?search=${encodeURIComponent(value)}` : '/catalog');
+    setSearchValue('');
+  };
 
   return (
     <>
@@ -68,7 +79,14 @@ export function Header() {
 
           {/* Actions */}
           <Group gap="xs" className={styles.actions}>
-            <ActionIcon variant="subtle" color="dark" size="lg" radius="xl" aria-label="Поиск">
+            <ActionIcon
+              variant="subtle"
+              color="dark"
+              size="lg"
+              radius="xl"
+              aria-label="Поиск"
+              onClick={openSearch}
+            >
               <Search size={20} strokeWidth={1.5} />
             </ActionIcon>
             
@@ -87,10 +105,19 @@ export function Header() {
               </ActionIcon>
             )}
 
-            <ActionIcon variant="subtle" color="dark" size="lg" radius="xl" aria-label="Избранное" className={styles.hideOnMobile}>
+            <ActionIcon
+              variant="subtle"
+              color="dark"
+              size="lg"
+              radius="xl"
+              aria-label="Избранное"
+              className={styles.hideOnMobile}
+              component={Link}
+              to="/favorites"
+            >
               <Heart size={20} strokeWidth={1.5} />
             </ActionIcon>
-            
+
             <ActionIcon
               variant="subtle"
               color="dark"
@@ -156,6 +183,9 @@ export function Header() {
           ))}
           
           <Box mt="md" pt="md" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <Link to="/favorites" className={styles.mobileLink} onClick={closeDrawer}>
+              Избранное
+            </Link>
             {isAdmin && (
                <Link to="/admin" className={styles.mobileLink} style={{ color: 'var(--color-gold)' }} onClick={closeDrawer}>
                 Панель управления
@@ -167,6 +197,31 @@ export function Header() {
           </Box>
         </Stack>
       </Drawer>
+
+      <Modal
+        opened={searchOpened}
+        onClose={closeSearch}
+        centered
+        title="Поиск украшений"
+      >
+        <Stack gap="md">
+          <TextInput
+            placeholder="Введите название товара..."
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.currentTarget.value)}
+            leftSection={<Search size={16} />}
+            autoFocus
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                submitSearch();
+              }
+            }}
+          />
+          <Button color="dark" onClick={submitSearch}>
+            Найти
+          </Button>
+        </Stack>
+      </Modal>
     </>
   );
 }
