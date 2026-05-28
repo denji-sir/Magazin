@@ -20,8 +20,9 @@ import {
   PasswordInput,
   Center,
   Loader,
+  Tooltip,
 } from '@mantine/core';
-import { User, Package, Settings, LogOut, ExternalLink, ShieldCheck } from 'lucide-react';
+import { User, Package, Settings, LogOut, ExternalLink, ShieldCheck, CircleAlert } from 'lucide-react';
 import { useAuth } from '../shared/api/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -30,10 +31,13 @@ import { useEffect, useState } from 'react';
 import { api } from '../shared/api/api';
 
 export function ProfilePage() {
+  const DELIVERY_MIN_DAYS = 2;
+  const DELIVERY_MAX_DAYS = 4;
   const { user, logout, isAdmin, updateProfile, changePassword } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [nowTs, setNowTs] = useState(Date.now());
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderModalOpened, { open: openOrderModal, close: closeOrderModal }] = useDisclosure(false);
   const [saving, setSaving] = useState(false);
@@ -64,6 +68,62 @@ export function ProfilePage() {
     };
     loadOrders();
   }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowTs(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const addDays = (dateString, days) => {
+    const date = new Date(dateString);
+    date.setDate(date.getDate() + days);
+    return date;
+  };
+
+  const buildStatusView = (order) => {
+    if (!order) {
+      return { label: '—', color: 'gray', hint: '' };
+    }
+
+    const status = String(order.status || '').toLowerCase();
+    const isCanceled = status === 'canceled';
+    const isExplicitDone = status === 'received';
+    const etaTo = addDays(order.created_at, DELIVERY_MAX_DAYS).getTime();
+    const completedByTime = nowTs >= etaTo && !isCanceled;
+
+    if (isCanceled) {
+      return { label: 'Отменён', color: 'red', hint: '' };
+    }
+    if (isExplicitDone || completedByTime) {
+      return { label: 'Успешно выполнен', color: 'green', hint: 'Заказ забрали и получили' };
+    }
+
+    if (status === 'created' || status === 'pending_payment') {
+      return { label: 'Подготовка', color: 'yellow', hint: 'Подготовка к оплате' };
+    }
+
+    if (status === 'processing') {
+      return { label: 'В процессе', color: 'blue', hint: '' };
+    }
+
+    if (status === 'assembling') {
+      return { label: 'Сборка заказа', color: 'indigo', hint: '' };
+    }
+    if (status === 'sent_to_pickup') {
+      return { label: 'Передан в ПВЗ', color: 'cyan', hint: '' };
+    }
+    if (status === 'ready_for_pickup') {
+      return { label: 'Готов к выдаче', color: 'teal', hint: '' };
+    }
+
+    return { label: status || '—', color: 'gray', hint: '' };
+  };
+
+  const buildDeliveryWindow = (order) => {
+    const etaFrom = addDays(order.created_at, DELIVERY_MIN_DAYS);
+    const etaTo = addDays(order.created_at, DELIVERY_MAX_DAYS);
+    return `${etaFrom.toLocaleDateString('ru-RU')} — ${etaTo.toLocaleDateString('ru-RU')} (2–4 дня)`;
+  };
 
   const handleLogout = () => {
     logout();
@@ -164,27 +224,43 @@ export function ProfilePage() {
                           <Table.Tr>
                             <Table.Th>№ Заказа</Table.Th>
                             <Table.Th>Дата</Table.Th>
+                            <Table.Th>ПВЗ</Table.Th>
+                            <Table.Th>Доставка</Table.Th>
                             <Table.Th>Сумма</Table.Th>
                             <Table.Th>Статус</Table.Th>
                             <Table.Th></Table.Th>
                           </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>
-                          {orders.map((order) => (
-                            <Table.Tr key={order.id}>
-                              <Table.Td><Text fw={500}>#{order.number || order.id}</Text></Table.Td>
-                              <Table.Td><Text fz="sm" c="dimmed">{new Date(order.created_at).toLocaleDateString('ru-RU')}</Text></Table.Td>
-                              <Table.Td><Text fz="sm" fw={600}>{Number(order.total).toLocaleString()} ₽</Text></Table.Td>
-                              <Table.Td>
-                                <Badge color={order.status === 'received' ? 'green' : 'gold'} variant="light" size="sm">
-                                  {order.status}
-                                </Badge>
-                              </Table.Td>
-                              <Table.Td>
-                                <ActionIcon variant="subtle" color="dark" onClick={() => handleViewOrder(order)}><ExternalLink size={16} /></ActionIcon>
-                              </Table.Td>
-                            </Table.Tr>
-                          ))}
+                          {orders.map((order) => {
+                            const statusView = buildStatusView(order);
+                            return (
+                              <Table.Tr key={order.id}>
+                                <Table.Td><Text fw={500}>#{order.number || order.id}</Text></Table.Td>
+                                <Table.Td><Text fz="sm" c="dimmed">{new Date(order.created_at).toLocaleDateString('ru-RU')}</Text></Table.Td>
+                                <Table.Td><Text fz="sm">{order.pickup_point_data?.name || '—'}</Text></Table.Td>
+                                <Table.Td><Text fz="xs" c="dimmed">{buildDeliveryWindow(order)}</Text></Table.Td>
+                                <Table.Td><Text fz="sm" fw={600}>{Number(order.total).toLocaleString()} ₽</Text></Table.Td>
+                                <Table.Td>
+                                  <Group gap={6}>
+                                    <Badge color={statusView.color} variant="light" size="sm">
+                                      {statusView.label}
+                                    </Badge>
+                                    {statusView.hint && (
+                                      <Tooltip label={statusView.hint} withArrow>
+                                        <ActionIcon variant="subtle" color="yellow" size="sm" aria-label={statusView.hint}>
+                                          <CircleAlert size={14} />
+                                        </ActionIcon>
+                                      </Tooltip>
+                                    )}
+                                  </Group>
+                                </Table.Td>
+                                <Table.Td>
+                                  <ActionIcon variant="subtle" color="dark" onClick={() => handleViewOrder(order)}><ExternalLink size={16} /></ActionIcon>
+                                </Table.Td>
+                              </Table.Tr>
+                            );
+                          })}
                         </Table.Tbody>
                       </Table>
                     </Paper>
@@ -249,16 +325,43 @@ export function ProfilePage() {
 
       <Modal opened={orderModalOpened} onClose={closeOrderModal} title={`Детали заказа #${selectedOrder?.number || selectedOrder?.id}`} radius="lg" size="lg">
         <Stack gap="md">
-          <Group justify="space-between">
+          {selectedOrder && (() => {
+            const statusView = buildStatusView(selectedOrder);
+            return (
+              <Group justify="space-between">
+                <Box>
+                  <Text fz="xs" c="dimmed">Дата заказа</Text>
+                  <Text fw={500}>{new Date(selectedOrder.created_at).toLocaleString('ru-RU')}</Text>
+                </Box>
+                <Box ta="right">
+                  <Text fz="xs" c="dimmed">Статус</Text>
+                  <Group gap={6} justify="flex-end">
+                    <Badge color={statusView.color} variant="light">{statusView.label}</Badge>
+                    {statusView.hint && (
+                      <Tooltip label={statusView.hint} withArrow>
+                        <ActionIcon variant="subtle" color="yellow" size="sm" aria-label={statusView.hint}>
+                          <CircleAlert size={14} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
+                  </Group>
+                </Box>
+              </Group>
+            );
+          })()}
+
+          <Divider color="var(--color-border)" opacity={0.5} />
+          <SimpleGrid cols={2} spacing="md">
             <Box>
-              <Text fz="xs" c="dimmed">Дата заказа</Text>
-              <Text fw={500}>{selectedOrder?.created_at ? new Date(selectedOrder.created_at).toLocaleString('ru-RU') : '—'}</Text>
+              <Text fz="xs" c="dimmed">ПВЗ</Text>
+              <Text fw={500}>{selectedOrder?.pickup_point_data?.name || '—'}</Text>
+              <Text fz="xs" c="dimmed">{selectedOrder?.pickup_point_data?.address || ''}</Text>
             </Box>
-            <Box ta="right">
-              <Text fz="xs" c="dimmed">Статус</Text>
-              <Badge color={selectedOrder?.status === 'received' ? 'green' : 'gold'} variant="light">{selectedOrder?.status || '—'}</Badge>
+            <Box>
+              <Text fz="xs" c="dimmed">Срок поставки</Text>
+              <Text fw={500}>{selectedOrder ? buildDeliveryWindow(selectedOrder) : '—'}</Text>
             </Box>
-          </Group>
+          </SimpleGrid>
 
           <Divider color="var(--color-border)" opacity={0.5} />
           <Text fw={600} fz="sm">Товары в заказе</Text>

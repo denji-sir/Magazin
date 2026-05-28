@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Container,
   Grid,
@@ -28,10 +28,12 @@ import { FavoriteAuthModal } from '../shared/ui/FavoriteAuthModal';
 
 export function ProductPage() {
   const { id } = useParams();
-  const { addItem } = useCart();
+  const navigate = useNavigate();
+  const { addItem, items } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
   const [product, setProduct] = useState(null);
   const [authModalOpened, setAuthModalOpened] = useState(false);
 
@@ -75,12 +77,26 @@ export function ProductPage() {
     );
   }
 
-  const handleAddToCart = async () => {
+  const productInCart = items.some((item) => Number(item.productId ?? item.id) === Number(product.id));
+
+  const handlePrimaryAction = async () => {
+    if (product.inStock === 0) {
+      return;
+    }
+
+    if (productInCart) {
+      navigate('/cart');
+      return;
+    }
+
+    setActionLoading(true);
     try {
       await addItem(product, quantity);
       toast.success(`${product.name} добавлен в корзину`);
     } catch {
       toast.error('Не удалось добавить товар в корзину');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -146,10 +162,48 @@ export function ProductPage() {
                 <Group gap="md" align="flex-end">
                   <Box style={{ width: 120 }}>
                     <Text fz="xs" fw={500} mb={8}>Количество</Text>
-                    <NumberInput value={quantity} onChange={(v) => setQuantity(Number(v) || 1)} min={1} max={product.inStock || 1} disabled={product.inStock === 0} />
+                    <NumberInput
+                      value={quantity}
+                      onChange={(value) => {
+                        const parsed = typeof value === 'number' ? value : Number(value);
+                        setQuantity(Number.isFinite(parsed) && parsed > 0 ? parsed : 1);
+                      }}
+                      min={1}
+                      max={product.inStock || 1}
+                      step={1}
+                      clampBehavior="strict"
+                      disabled={product.inStock === 0}
+                      styles={{
+                        input: {
+                          height: 56,
+                          borderRadius: 16,
+                          border: '1px solid var(--color-border)',
+                          background: '#F3EFE8',
+                          fontSize: 24,
+                          fontWeight: 600,
+                          color: 'var(--color-graphite)',
+                          textAlign: 'left',
+                          paddingLeft: 18,
+                          boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.5)',
+                        },
+                        control: {
+                          borderColor: 'var(--color-border)',
+                          width: 38,
+                          background: '#ECE6DB',
+                        },
+                      }}
+                    />
                   </Box>
-                  <Button size="lg" style={{ flex: 1 }} color="dark" leftSection={<ShoppingBag size={20} />} disabled={product.inStock === 0} onClick={handleAddToCart}>
-                    {product.inStock > 0 ? 'Добавить в корзину' : 'Нет в наличии'}
+                  <Button
+                    size="lg"
+                    style={{ flex: 1 }}
+                    color="dark"
+                    leftSection={<ShoppingBag size={20} />}
+                    disabled={product.inStock === 0}
+                    loading={actionLoading}
+                    onClick={handlePrimaryAction}
+                  >
+                    {product.inStock === 0 ? 'Нет в наличии' : productInCart ? 'Заказать' : 'Добавить в корзину'}
                   </Button>
                   <ActionIcon variant="outline" color={isFavorite(product.id) ? 'red' : 'dark'} size={48} radius="md" onClick={handleFavorite}>
                     <Heart size={20} fill={isFavorite(product.id) ? 'currentColor' : 'none'} />

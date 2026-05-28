@@ -37,10 +37,13 @@ import {
   ShoppingCart,
   Trash2,
   Users,
+  LogOut,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../shared/api/api';
+import { useAuth } from '../shared/api/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const ORDER_STATUS_OPTIONS = [
   'created',
@@ -57,6 +60,8 @@ const ORDER_STATUS_OPTIONS = [
 const PAYMENT_STATUS_OPTIONS = ['pending_payment', 'processing', 'paid', 'error', 'canceled'];
 
 export function AdminPage() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('products');
   const [loading, setLoading] = useState(true);
 
@@ -344,6 +349,12 @@ export function AdminPage() {
     }
   };
 
+  const handleAdminLogout = () => {
+    logout();
+    toast.success('Вы вышли из админки');
+    navigate('/auth/login', { replace: true });
+  };
+
   if (loading) {
     return (
       <Center py={120}>
@@ -363,6 +374,14 @@ export function AdminPage() {
                 Полный контроль каталога, заказов и пользователей
               </Text>
             </Box>
+            <Button
+              variant="light"
+              color="dark"
+              leftSection={<LogOut size={16} />}
+              onClick={handleAdminLogout}
+            >
+              Выйти из админки
+            </Button>
           </Group>
 
           <Tabs value={activeTab} onChange={(value) => setActiveTab(value || 'products')} color="gold" variant="outline" radius="md">
