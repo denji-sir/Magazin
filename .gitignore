@@ -6,6 +6,7 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.ssh/
 
 # Python
 __pycache__/
@@ -32,9 +33,6 @@ front-end/test-results/
 
 # Refs (design reference images)
 refs/
-
-# Databases
-*.sqlite3
 
 # Backup files
 *.bak
