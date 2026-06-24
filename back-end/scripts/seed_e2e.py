@@ -14,9 +14,12 @@ admin, created = User.objects.get_or_create(
         "last_name": "E2E",
     },
 )
-if created:
-    admin.set_password("Admin123456")
-    admin.save(update_fields=["password"])
+admin.role = "admin"
+admin.is_staff = True
+admin.first_name = "Admin"
+admin.last_name = "E2E"
+admin.set_password("Admin123456")
+admin.save(update_fields=["role", "is_staff", "first_name", "last_name", "password"])
 
 cat, _ = Category.objects.get_or_create(slug="e2e-rings", defaults={"name": "E2E Rings"})
 Product.objects.get_or_create(

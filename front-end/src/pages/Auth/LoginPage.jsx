@@ -40,6 +40,9 @@ export function LoginPage() {
       await login(values.email, values.password);
       toast.success('Вход выполнен');
       navigate(from, { replace: true });
+    } catch (error) {
+      const message = error.response?.data?.detail || 'Не удалось войти. Проверьте email и пароль.';
+      toast.error(message);
     } finally {
       setLoading(false);
     }

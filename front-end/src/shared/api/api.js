@@ -34,13 +34,15 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response ? error.response.status : null;
+    const requestUrl = error.config?.url || '';
+    const isAuthLoginRequest = requestUrl.includes('/auth/login/');
 
     if (status === 401) {
-      // Unauthorized: clear tokens and possibly redirect
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      // window.location.href = '/auth/login';
-      toast.error('Сессия истекла. Пожалуйста, войдите снова.');
+      if (!isAuthLoginRequest) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        toast.error('Сессия истекла. Пожалуйста, войдите снова.');
+      }
     } else if (status === 403) {
       toast.error('У вас нет прав для выполнения этого действия.');
     } else if (status === 404) {
