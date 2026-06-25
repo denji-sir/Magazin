@@ -172,12 +172,31 @@ export function ProfilePage() {
     }
   };
 
+  const renderStatusBadge = (order) => {
+    const statusView = buildStatusView(order);
+
+    return (
+      <Group gap={6} wrap="nowrap">
+        <Badge color={statusView.color} variant="light" size="sm">
+          {statusView.label}
+        </Badge>
+        {statusView.hint && (
+          <Tooltip label={statusView.hint} withArrow>
+            <ActionIcon variant="subtle" color="yellow" size="sm" aria-label={statusView.hint}>
+              <CircleAlert size={14} />
+            </ActionIcon>
+          </Tooltip>
+        )}
+      </Group>
+    );
+  };
+
   return (
-    <Box py={60} bg="var(--color-bg)" style={{ minHeight: 'calc(100vh - var(--header-height))' }}>
+    <Box py={{ base: 32, sm: 60 }} bg="var(--color-bg)" style={{ minHeight: 'calc(100vh - var(--header-height))' }}>
       <Container size="xl">
         <Grid gutter={40}>
           <Grid.Col span={{ base: 12, md: 4 }}>
-            <Paper p="xl" radius="xl" withBorder shadow="sm">
+            <Paper p={{ base: 'md', sm: 'xl' }} radius="xl" withBorder shadow="sm">
               <Stack align="center" gap="md">
                 <Avatar size={100} radius={100} color="gold">{user?.firstName?.charAt(0) || 'U'}</Avatar>
                 <Stack gap={4} align="center">
@@ -218,52 +237,81 @@ export function ProfilePage() {
                   {loading ? (
                     <Center py={40}><Loader color="gold" /></Center>
                   ) : orders.length > 0 ? (
-                    <Paper withBorder radius="lg" style={{ overflow: 'hidden' }}>
-                      <Table verticalSpacing="md" horizontalSpacing="xl">
-                        <Table.Thead bg="var(--color-bg)">
-                          <Table.Tr>
-                            <Table.Th>№ Заказа</Table.Th>
-                            <Table.Th>Дата</Table.Th>
-                            <Table.Th>ПВЗ</Table.Th>
-                            <Table.Th>Доставка</Table.Th>
-                            <Table.Th>Сумма</Table.Th>
-                            <Table.Th>Статус</Table.Th>
-                            <Table.Th></Table.Th>
-                          </Table.Tr>
-                        </Table.Thead>
-                        <Table.Tbody>
-                          {orders.map((order) => {
-                            const statusView = buildStatusView(order);
-                            return (
+                    <>
+                      <Paper withBorder radius="lg" style={{ overflow: 'hidden' }} visibleFrom="sm">
+                        <Table verticalSpacing="md" horizontalSpacing="xl">
+                          <Table.Thead bg="var(--color-bg)">
+                            <Table.Tr>
+                              <Table.Th>№ Заказа</Table.Th>
+                              <Table.Th>Дата</Table.Th>
+                              <Table.Th>ПВЗ</Table.Th>
+                              <Table.Th>Доставка</Table.Th>
+                              <Table.Th>Сумма</Table.Th>
+                              <Table.Th>Статус</Table.Th>
+                              <Table.Th></Table.Th>
+                            </Table.Tr>
+                          </Table.Thead>
+                          <Table.Tbody>
+                            {orders.map((order) => (
                               <Table.Tr key={order.id}>
                                 <Table.Td><Text fw={500}>#{order.number || order.id}</Text></Table.Td>
                                 <Table.Td><Text fz="sm" c="dimmed">{new Date(order.created_at).toLocaleDateString('ru-RU')}</Text></Table.Td>
                                 <Table.Td><Text fz="sm">{order.pickup_point_data?.name || '—'}</Text></Table.Td>
                                 <Table.Td><Text fz="xs" c="dimmed">{buildDeliveryWindow(order)}</Text></Table.Td>
                                 <Table.Td><Text fz="sm" fw={600}>{Number(order.total).toLocaleString()} ₽</Text></Table.Td>
-                                <Table.Td>
-                                  <Group gap={6}>
-                                    <Badge color={statusView.color} variant="light" size="sm">
-                                      {statusView.label}
-                                    </Badge>
-                                    {statusView.hint && (
-                                      <Tooltip label={statusView.hint} withArrow>
-                                        <ActionIcon variant="subtle" color="yellow" size="sm" aria-label={statusView.hint}>
-                                          <CircleAlert size={14} />
-                                        </ActionIcon>
-                                      </Tooltip>
-                                    )}
-                                  </Group>
-                                </Table.Td>
+                                <Table.Td>{renderStatusBadge(order)}</Table.Td>
                                 <Table.Td>
                                   <ActionIcon variant="subtle" color="dark" onClick={() => handleViewOrder(order)}><ExternalLink size={16} /></ActionIcon>
                                 </Table.Td>
                               </Table.Tr>
-                            );
-                          })}
-                        </Table.Tbody>
-                      </Table>
-                    </Paper>
+                            ))}
+                          </Table.Tbody>
+                        </Table>
+                      </Paper>
+
+                      <Stack gap="sm" hiddenFrom="sm">
+                        {orders.map((order) => (
+                          <Paper key={order.id} p="md" radius="lg" withBorder>
+                            <Stack gap="sm">
+                              <Group justify="space-between" align="flex-start" wrap="nowrap">
+                                <Box>
+                                  <Text fz="xs" c="dimmed">Заказ</Text>
+                                  <Text fw={700} style={{ wordBreak: 'break-word' }}>#{order.number || order.id}</Text>
+                                </Box>
+                                <ActionIcon variant="subtle" color="dark" onClick={() => handleViewOrder(order)} aria-label="Открыть заказ">
+                                  <ExternalLink size={16} />
+                                </ActionIcon>
+                              </Group>
+
+                              <SimpleGrid cols={2} spacing="xs">
+                                <Box>
+                                  <Text fz="xs" c="dimmed">Дата</Text>
+                                  <Text fz="sm">{new Date(order.created_at).toLocaleDateString('ru-RU')}</Text>
+                                </Box>
+                                <Box>
+                                  <Text fz="xs" c="dimmed">Сумма</Text>
+                                  <Text fz="sm" fw={700}>{Number(order.total).toLocaleString()} ₽</Text>
+                                </Box>
+                              </SimpleGrid>
+
+                              <Box>
+                                <Text fz="xs" c="dimmed">Пункт выдачи</Text>
+                                <Text fz="sm" style={{ wordBreak: 'break-word' }}>{order.pickup_point_data?.name || '—'}</Text>
+                              </Box>
+
+                              <Box>
+                                <Text fz="xs" c="dimmed">Доставка</Text>
+                                <Text fz="sm">{buildDeliveryWindow(order)}</Text>
+                              </Box>
+
+                              <Group justify="space-between" align="center">
+                                {renderStatusBadge(order)}
+                              </Group>
+                            </Stack>
+                          </Paper>
+                        ))}
+                      </Stack>
+                    </>
                   ) : (
                     <Paper p="xl" radius="lg" withBorder>
                       <Center py={40}><Text c="dimmed">У вас пока нет заказов</Text></Center>

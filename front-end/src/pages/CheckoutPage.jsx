@@ -121,7 +121,7 @@ export function CheckoutPage() {
             <Grid gutter={40}>
               <Grid.Col span={{ base: 12, md: 8 }}>
                 <Stack gap="xl">
-                  <Paper p="xl" radius="lg" withBorder>
+                  <Paper p={{ base: 'md', sm: 'xl' }} radius="lg" withBorder>
                     <Group mb="xl" gap="sm"><Box p={8} bg="var(--color-bg)" style={{ borderRadius: '8px' }}><Truck size={20} color="var(--color-gold)" /></Box><Title order={3} fz="lg">Контактные данные</Title></Group>
                     <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                       <TextInput label="Имя" placeholder="Иван" required {...form.getInputProps('firstName')} />
@@ -132,7 +132,7 @@ export function CheckoutPage() {
                     </SimpleGrid>
                   </Paper>
 
-                  <Paper p="xl" radius="lg" withBorder>
+                  <Paper p={{ base: 'md', sm: 'xl' }} radius="lg" withBorder>
                     <Group mb="xl" gap="sm"><Box p={8} bg="var(--color-bg)" style={{ borderRadius: '8px' }}><MapPin size={20} color="var(--color-gold)" /></Box><Title order={3} fz="lg">Пункт выдачи</Title></Group>
                     {pvzLoading ? (
                       <Center py={30}><Loader color="gold" /></Center>
@@ -140,17 +140,29 @@ export function CheckoutPage() {
                       <>
                         <Select
                           label="Выберите пункт выдачи"
-                          placeholder="Начните вводить адрес или название..."
+                          placeholder="Адрес или название ПВЗ"
                           data={pvzList}
                           searchable
                           required
                           {...form.getInputProps('pvzId')}
                           mb="md"
+                          comboboxProps={{ withinPortal: true }}
+                          styles={{
+                            input: {
+                              minHeight: 48,
+                              fontSize: 16,
+                              paddingRight: 44,
+                            },
+                            option: {
+                              whiteSpace: 'normal',
+                              lineHeight: 1.35,
+                            },
+                          }}
                         />
 
                         {selectedPvz && (
                           <Box p="md" bg="var(--color-bg)" style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                            <Text fw={600} fz="sm">{selectedPvz.label}</Text>
+                            <Text fw={600} fz="sm" style={{ wordBreak: 'break-word' }}>{selectedPvz.label}</Text>
                             <Text fz="xs" c="dimmed" mt={4}>{selectedPvz.address}</Text>
                             <Text fz="xs" c="dimmed" mt={2}>Часы работы: {selectedPvz.schedule || '—'}</Text>
                           </Box>
